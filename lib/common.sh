@@ -16,20 +16,41 @@ SHOW_HELP=0
 NODE_CHANNEL="lts"
 SELECTED_MODULES=()
 
+# Cores opcionais para whiptail/newt
+# Pode ajustar depois se quiser outro tema.
+export NEWT_COLORS='
+root=,black
+window=white,black
+border=white,black
+title=yellow,black
+textbox=white,black
+button=black,cyan
+actbutton=white,blue
+compactbutton=white,black
+actsellistbox=white,blue
+sellistbox=white,black
+checkbox=white,black
+actcheckbox=yellow,blue
+entry=white,black
+label=white,black
+shadow=black,black
+'
+
 log() {
-  echo "[INFO] $*" | tee -a "$LOG_FILE"
+  echo "[INFO] $*" >>"$LOG_FILE"
 }
 
 warn() {
-  echo "[WARN] $*" | tee -a "$LOG_FILE" >&2
+  echo "[WARN] $*" >>"$LOG_FILE"
 }
 
 error() {
-  echo "[ERROR] $*" | tee -a "$LOG_FILE" >&2
+  echo "[ERROR] $*" >>"$LOG_FILE"
 }
 
 die() {
   error "$*"
+  echo "[ERROR] $*" >&2
   exit 1
 }
 
@@ -47,6 +68,7 @@ on_error() {
   local exit_code=$?
   local line_no=$1
   error "Falha na linha ${line_no}. Consulte: $LOG_FILE"
+  echo "[ERROR] Falha na linha ${line_no}. Consulte: $LOG_FILE" >&2
   exit "$exit_code"
 }
 trap 'on_error $LINENO' ERR
@@ -66,7 +88,7 @@ run_cmd() {
   fi
 
   log "Executando: $*"
-  eval "$@" | tee -a "$LOG_FILE"
+  eval "$@" >>"$LOG_FILE" 2>&1
 }
 
 run_as_target_user() {
@@ -78,7 +100,7 @@ run_as_target_user() {
   fi
 
   log "Executando como $TARGET_USER: $cmd"
-  sudo -H -u "$TARGET_USER" bash -lc "$cmd" | tee -a "$LOG_FILE"
+  sudo -H -u "$TARGET_USER" bash -lc "$cmd" >>"$LOG_FILE" 2>&1
 }
 
 apt_update_once() {
@@ -114,7 +136,7 @@ ensure_line_in_file() {
     {
       echo ""
       echo "$content"
-    } >> "$file"
+    } >>"$file"
     chown "$TARGET_USER:$TARGET_USER" "$file"
   fi
 }
@@ -147,7 +169,7 @@ parse_args() {
         MODE="non-interactive"
         shift
         [[ $# -gt 0 ]] || die "Use --only modulo1,modulo2"
-        IFS=',' read -r -a SELECTED_MODULES <<< "$1"
+        IFS=',' read -r -a SELECTED_MODULES <<<"$1"
         shift
         ;;
       --node-channel)
@@ -172,7 +194,7 @@ parse_args() {
 }
 
 print_help() {
-  cat <<EOF2
+  cat <<EOF
 $SCRIPT_NAME
 
 Uso:
@@ -190,17 +212,17 @@ Opções:
   --node-channel lts|current
   --dry-run
   --help|-h
-EOF2
+EOF
 }
 
 print_summary_console() {
-  cat <<EOF2
+  cat <<EOF
 Instalação finalizada.
 
 Usuário alvo: $TARGET_USER
 Node channel: $NODE_CHANNEL
 Log: $LOG_FILE
-EOF2
+EOF
 }
 
 install_base_dependencies() {

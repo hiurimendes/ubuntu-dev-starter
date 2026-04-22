@@ -97,7 +97,11 @@ module_status() {
       command -v docker >/dev/null 2>&1 && echo "instalado" || echo "não instalado"
       ;;
     docker-compose)
-      docker compose version >/dev/null 2>&1 && echo "instalado" || echo "não instalado"
+      if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+        echo "instalado"
+      else
+        echo "não instalado"
+      fi
       ;;
     github-cli)
       command -v gh >/dev/null 2>&1 && echo "instalado" || echo "não instalado"

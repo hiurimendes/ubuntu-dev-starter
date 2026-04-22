@@ -9,18 +9,23 @@ confirm_yesno() {
 }
 
 choose_node_channel_if_needed() {
-  NODE_CHANNEL="$(whiptail \
-    --title "$SCRIPT_NAME" \
-    --menu "Escolha o canal do Node.js para instalações via nvm/corepack:" \
-    15 70 5 \
-    "lts" "Node LTS (recomendado)" \
-    "current" "Node Current (mais recente)" \
-    3>&1 1>&2 2>&3)" || NODE_CHANNEL="lts"
+  NODE_CHANNEL="$(
+    whiptail \
+      --title "$SCRIPT_NAME" \
+      --menu "Escolha o canal do Node.js para instalações via nvm/corepack:" \
+      15 72 5 \
+      "lts" "Node LTS (recomendado)" \
+      "current" "Node Current (mais recente)" \
+      3>&1 1>&2 2>&3
+  )" || NODE_CHANNEL="lts"
 }
 
 show_main_checklist() {
   local args=()
-  local key desc status label
+  local key
+  local desc
+  local status
+  local label
 
   for key in "${MODULE_KEYS[@]}"; do
     desc="${MODULE_DESCRIPTIONS[$key]}"
@@ -31,7 +36,7 @@ show_main_checklist() {
 
   whiptail \
     --title "$SCRIPT_NAME" \
-    --checklist "Selecione os módulos para instalar/atualizar:" \
+    --checklist "Selecione os módulos para instalar ou atualizar:" \
     26 100 16 \
     "${args[@]}" \
     3>&1 1>&2 2>&3
