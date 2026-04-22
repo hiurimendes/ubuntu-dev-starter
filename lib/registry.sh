@@ -61,20 +61,129 @@ module_exists() {
   return 1
 }
 
+module_is_selected() {
+  local module="$1"
+  local selected
+  for selected in "${SELECTED_MODULES[@]}"; do
+    [[ "$selected" == "$module" ]] && return 0
+  done
+  return 1
+}
+
+add_selected_module() {
+  local module="$1"
+  module_is_selected "$module" || SELECTED_MODULES+=("$module")
+}
+
+remove_selected_module() {
+  local module="$1"
+  local updated=()
+  local item
+
+  for item in "${SELECTED_MODULES[@]}"; do
+    [[ "$item" != "$module" ]] && updated+=("$item")
+  done
+
+  SELECTED_MODULES=("${updated[@]}")
+}
+
+set_module_selected_state() {
+  local module="$1"
+  local state="$2"
+
+  if [[ "$state" == "ON" ]]; then
+    add_selected_module "$module"
+  else
+    remove_selected_module "$module"
+  fi
+}
+
 select_all_modules() {
   SELECTED_MODULES=("${MODULE_KEYS[@]}")
 }
 
+clear_all_modules() {
+  SELECTED_MODULES=()
+}
+
 normalize_whiptail_selection() {
   local raw="$1"
-  SELECTED_MODULES=()
-
+  local parsed=()
   local item
+
   for item in $raw; do
     item="${item%\"}"
     item="${item#\"}"
-    module_exists "$item" && SELECTED_MODULES+=("$item")
+    module_exists "$item" && parsed+=("$item")
   done
+
+  printf '%s\n' "${parsed[@]}"
+}
+
+get_categories() {
+  local seen=()
+  local key
+  local category
+  local exists
+  local item
+
+  for key in "${MODULE_KEYS[@]}"; do
+    category="${MODULE_CATEGORIES[$key]}"
+    exists=0
+
+    for item in "${seen[@]:-}"; do
+      if [[ "$item" == "$category" ]]; then
+        exists=1
+        break
+      fi
+    done
+
+    if [[ "$exists" -eq 0 ]]; then
+      seen+=("$category")
+    fi
+  done
+
+  printf '%s\n' "${seen[@]}"
+}
+
+get_modules_by_category() {
+  local wanted="$1"
+  local key
+
+  for key in "${MODULE_KEYS[@]}"; do
+    [[ "${MODULE_CATEGORIES[$key]}" == "$wanted" ]] && printf '%s\n' "$key"
+  done
+}
+
+count_selected_modules() {
+  echo "${#SELECTED_MODULES[@]}"
+}
+
+count_modules_in_category() {
+  local category="$1"
+  local count=0
+  local module
+
+  while IFS= read -r module; do
+    [[ -n "$module" ]] && count=$((count + 1))
+  done < <(get_modules_by_category "$category")
+
+  echo "$count"
+}
+
+count_selected_in_category() {
+  local category="$1"
+  local count=0
+  local module
+
+  while IFS= read -r module; do
+    [[ -z "$module" ]] && continue
+    if module_is_selected "$module"; then
+      count=$((count + 1))
+    fi
+  done < <(get_modules_by_category "$category")
+
+  echo "$count"
 }
 
 module_status() {

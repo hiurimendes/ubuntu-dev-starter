@@ -43,20 +43,17 @@ main() {
 run_interactive_mode() {
   choose_node_channel_if_needed
 
-  local selections
-  selections="$(show_main_checklist)" || {
+  if ! run_category_selection_flow; then
     warn "Operação cancelada."
     exit 0
-  }
+  fi
 
-  if [[ -z "$selections" ]]; then
+  if [[ "${#SELECTED_MODULES[@]}" -eq 0 ]]; then
     show_msg "Nenhum item foi selecionado."
     exit 0
   fi
 
-  normalize_whiptail_selection "$selections"
-
-  if ! confirm_yesno "Deseja iniciar a instalação/atualização dos itens selecionados?"; then
+  if ! confirm_yesno "Deseja iniciar a instalação/atualização dos módulos selecionados?"; then
     warn "Instalação cancelada."
     exit 0
   fi
