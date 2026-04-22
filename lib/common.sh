@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT_NAME="Ubuntu Dev Installer V2.2"
-LOG_FILE="/tmp/ubuntu-dev-installer.log"
+LOG_FILE="${PWD}/ubuntu-dev-installer.log"
 
 TARGET_USER="${SUDO_USER:-$USER}"
 TARGET_HOME="$(eval echo "~$TARGET_USER")"
@@ -34,7 +34,13 @@ die() {
 }
 
 init_runtime() {
-  : > "$LOG_FILE"
+  if [[ -e "$LOG_FILE" && ! -w "$LOG_FILE" ]]; then
+    rm -f "$LOG_FILE"
+  fi
+
+  rm -f "$LOG_FILE"
+  touch "$LOG_FILE"
+  chmod 600 "$LOG_FILE"
 }
 
 on_error() {
@@ -166,7 +172,7 @@ parse_args() {
 }
 
 print_help() {
-  cat <<EOH
+  cat <<EOF2
 $SCRIPT_NAME
 
 Uso:
@@ -184,17 +190,17 @@ Opções:
   --node-channel lts|current
   --dry-run
   --help|-h
-EOH
+EOF2
 }
 
 print_summary_console() {
-  cat <<EOS
+  cat <<EOF2
 Instalação finalizada.
 
 Usuário alvo: $TARGET_USER
 Node channel: $NODE_CHANNEL
 Log: $LOG_FILE
-EOS
+EOF2
 }
 
 install_base_dependencies() {
